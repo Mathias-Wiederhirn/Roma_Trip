@@ -1,0 +1,888 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rome Trip Plan | 2 Adults + 1 Teen</title>
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+    crossorigin=""
+  >
+  <style>
+    :root {
+      --ink: #1f2933;
+      --muted: #52606d;
+      --paper: #f9f6ef;
+      --card: #ffffff;
+      --line: #d8d0c2;
+      --accent: #8c2f39;
+      --accent-2: #0077b6;
+      --accent-3: #c2410c;
+      --accent-4: #4338ca;
+      --soft: #efe6d7;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Georgia, "Times New Roman", serif;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at top right, rgba(140, 47, 57, 0.08), transparent 24rem),
+        linear-gradient(180deg, #fcfaf5, #f2ede2);
+      line-height: 1.45;
+    }
+
+    .page {
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 28px;
+    }
+
+    .card {
+      background: rgba(255, 255, 255, 0.94);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      box-shadow: 0 14px 36px rgba(31, 41, 51, 0.08);
+    }
+
+    h1, h2, h3 {
+      margin: 0 0 10px;
+      font-weight: 700;
+    }
+
+    h1 { font-size: 2rem; }
+    h2 { font-size: 1.3rem; margin-top: 0; }
+    h3 { font-size: 1rem; }
+
+    p { margin: 0 0 12px; }
+
+    .muted { color: var(--muted); }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .pill {
+      display: inline-block;
+      padding: 6px 12px;
+      border-radius: 999px;
+      background: var(--soft);
+      border: 1px solid var(--line);
+      margin-right: 8px;
+      margin-bottom: 8px;
+      font-size: 0.92rem;
+    }
+
+    .card {
+      padding: 22px;
+      margin-bottom: 18px;
+    }
+
+    .top-map {
+      margin-bottom: 20px;
+    }
+
+    .layout {
+      display: block;
+    }
+
+    .day {
+      border-top: 5px solid var(--accent);
+    }
+
+    .day[data-color="2"] { border-top-color: var(--accent-2); }
+    .day[data-color="3"] { border-top-color: var(--accent-3); }
+    .day[data-color="4"] { border-top-color: var(--accent-4); }
+
+    .timeline {
+      margin: 16px 0 0;
+      padding: 0;
+      list-style: none;
+      border-left: 2px solid var(--line);
+    }
+
+    .timeline li {
+      margin: 0 0 14px 16px;
+      padding-left: 14px;
+      position: relative;
+    }
+
+    .timeline li::before {
+      content: "";
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--accent);
+      position: absolute;
+      left: -22px;
+      top: 7px;
+      border: 2px solid #fff;
+      box-shadow: 0 0 0 1px var(--line);
+    }
+
+    .day[data-color="2"] .timeline li::before { background: var(--accent-2); }
+    .day[data-color="3"] .timeline li::before { background: var(--accent-3); }
+    .day[data-color="4"] .timeline li::before { background: var(--accent-4); }
+
+    .time {
+      display: inline-block;
+      min-width: 86px;
+      font-weight: 700;
+    }
+
+    .time[data-place] {
+      cursor: help;
+      text-decoration: underline dotted;
+      text-underline-offset: 3px;
+    }
+
+    .tag {
+      display: inline-block;
+      margin-left: 6px;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      background: #f3f4f6;
+      border: 1px solid #e5e7eb;
+      color: #374151;
+    }
+
+    .map-shell {
+      position: sticky;
+      top: 14px;
+    }
+
+    #rome-map {
+      width: 100%;
+      height: 980px;
+      border-radius: 16px;
+      border: 1px solid var(--line);
+      overflow: hidden;
+    }
+
+    .leaflet-container {
+      font-family: Georgia, "Times New Roman", serif;
+    }
+
+    .map-note {
+      margin-top: 12px;
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+
+    .day-filter {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 12px 0 14px;
+    }
+
+    .day-filter button {
+      border: 1px solid var(--line);
+      background: #fffdf8;
+      color: var(--ink);
+      border-radius: 999px;
+      padding: 8px 14px;
+      font: inherit;
+      cursor: pointer;
+      transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+    }
+
+    .day-filter button.active {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+    }
+
+    .agenda-day.hidden {
+      display: none;
+    }
+
+    .legend {
+      display: grid;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .legend-row {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      font-size: 0.92rem;
+    }
+
+    .legend-line {
+      width: 32px;
+      height: 0;
+      border-top: 4px solid var(--accent);
+      border-radius: 999px;
+    }
+
+    .legend-line.two { border-color: var(--accent-2); }
+    .legend-line.three { border-color: var(--accent-3); }
+    .legend-line.four { border-color: var(--accent-4); }
+
+    .notes {
+      font-size: 0.92rem;
+    }
+
+    .hover-card {
+      position: fixed;
+      z-index: 5000;
+      width: 260px;
+      background: rgba(255, 255, 255, 0.98);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      box-shadow: 0 14px 30px rgba(31, 41, 51, 0.18);
+      padding: 10px;
+      pointer-events: none;
+      display: none;
+    }
+
+    .hover-card img {
+      width: 100%;
+      height: 120px;
+      object-fit: cover;
+      border-radius: 10px;
+      display: block;
+      margin-bottom: 8px;
+    }
+
+    .hover-card .kind {
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    a { color: #7c2d12; }
+
+    @media print {
+      body {
+        background: #fff;
+      }
+
+      .page {
+        max-width: none;
+        padding: 10mm;
+      }
+
+      .layout {
+        grid-template-columns: 1fr;
+      }
+
+      .map-shell {
+        position: static;
+      }
+
+      .hero, .card {
+        box-shadow: none;
+        break-inside: avoid;
+      }
+    }
+
+    @media (max-width: 920px) {
+      .layout {
+        grid-template-columns: 1fr;
+      }
+
+      .map-shell {
+        position: static;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <section class="hero">
+    <section class="card top-map">
+      <h2>Tania, Eleni &amp; Mat's Rome Trip</h2>
+      <p><strong>Base:</strong> Piazza delle Vaschette 13, Vaticano Prati, Rome</p>
+      <p><strong>Trip dates:</strong> Wednesday 15 April 2026 to Sunday 19 April 2026.</p>
+      <div class="day-filter" id="day-filter">
+      </div>
+      <div id="rome-map" aria-label="Rome itinerary map"></div>
+    </section>
+
+    <div class="layout">
+      <main>
+        <section class="card day agenda-day" data-color="1" data-route-id="wed">
+          <h2>Wednesday 15 April 2026 | Arrival + Easy First Evening</h2>
+          <p class="muted">Goal: gentle arrival, no pressure, stay close to the hotel and enjoy the Vatican riverside area.</p>
+          <ul class="timeline">
+            <li><span class="time">16:40</span> Arrive at Rome airport. If this is <strong>Fiumicino (FCO)</strong>, a licensed white city taxi to the hotel area is usually the easiest choice for 3 people with luggage. Allow roughly <strong>45 to 60 minutes</strong> to reach Prati depending on traffic.</li>
+            <li><span class="time">18:00</span> Expected hotel arrival, check-in, and a short refresh break.</li>
+            <li><span class="time">19:00</span> Leave hotel for an easy walk through <strong>Borgo Pio</strong> and toward <strong>St Peter's Square</strong>. <span class="tag">Walk 8 to 10 min</span></li>
+            <li><span class="time" data-place="stpeter">19:15</span> St Peter's Square and Via della Conciliazione for your first Rome views, photos, and evening atmosphere.</li>
+            <li><span class="time">20:00</span> Dinner in the Borgo Pio area. This keeps the evening relaxed and very close to the hotel.</li>
+            <li><span class="time">21:30</span> Slow walk back to the hotel. <span class="tag">Walk 8 to 10 min</span></li>
+          </ul>
+        </section>
+
+        <section class="card day agenda-day" data-color="2" data-route-id="thu">
+          <h2>Thursday 16 April 2026 | Vatican Museums, St Peter's, Castel Sant'Angelo</h2>
+          <p class="muted">Goal: keep the entire day on the Vatican side so there is very little backtracking.</p>
+          <ul class="timeline">
+            <li><span class="time">10:30</span> Leave hotel and walk toward the Vatican Museums area. <span class="tag">Walk about 18 min</span></li>
+            <li><span class="time">10:50</span> Arrive early for the meeting point, water break, tickets, and security buffer.</li>
+            <li><span class="time" data-place="vatican">11:00</span> <strong>Booked guided tour:</strong> Vatican Museums + Sistine Chapel. Keep energy for this long indoor visit.</li>
+            <li><span class="time">14:10</span> Lunch near the museum exit or back in Prati. <span class="tag">Walk 10 to 15 min</span></li>
+            <li><span class="time">15:20</span> Coffee break in Prati or Borgo Pio.</li>
+            <li><span class="time" data-place="stpeter">15:45</span> Walk to <strong>St Peter's Square</strong> and enjoy the exterior and atmosphere. <span class="tag">Walk about 15 min</span></li>
+            <li><span class="time">16:15</span> Optional entry to <strong>St Peter's Basilica</strong> only if the queue looks reasonable. If the line is long, keep this as an exterior stop and enjoy the square instead.</li>
+            <li><span class="time" data-place="castel">17:10</span> Walk to <strong>Castel Sant'Angelo</strong> and <strong>Ponte Sant'Angelo</strong>. <span class="tag">Walk about 14 min</span></li>
+            <li><span class="time">17:25</span> Riverside walk, angel bridge views, and photo stop at sunset light.</li>
+            <li><span class="time">18:15</span> Return toward Borgo Pio / Prati for aperitivo. <span class="tag">Walk about 12 min</span></li>
+            <li><span class="time">19:15</span> Dinner near the hotel so the day ends easily after the museum tour.</li>
+            <li><span class="time">21:00</span> Back at hotel.</li>
+          </ul>
+        </section>
+
+        <section class="card day agenda-day" data-color="3" data-route-id="fri">
+          <h2>Friday 17 April 2026 | Capitoline Hill, Monti, Colosseum Underground</h2>
+          <p class="muted">Goal: spend the day on the Ancient Rome side and arrive at the Colosseum without stress.</p>
+          <ul class="timeline">
+            <li><span class="time">10:30</span> Leave hotel and take a taxi to <strong>Piazza Venezia</strong> or <strong>Capitoline Hill</strong>. <span class="tag">Taxi about 15 to 20 min</span></li>
+            <li><span class="time" data-place="venezia">10:55</span> Explore the <strong>Piazza Venezia</strong> area and take in the big Roman overview from the outside of the Vittoriano.</li>
+            <li><span class="time" data-place="capitoline">11:20</span> Walk up to <strong>Capitoline Hill</strong> for one of the best overviews toward the Forum. <span class="tag">Walk about 8 min</span></li>
+            <li><span class="time">11:50</span> Walk toward the charming <strong>Monti</strong> neighborhood. <span class="tag">Walk about 15 min</span></li>
+            <li><span class="time" data-place="monti">12:05</span> Early lunch in Monti so you are comfortable before the underground visit.</li>
+            <li><span class="time">13:10</span> Walk from Monti to the Colosseum meeting point. <span class="tag">Walk about 12 to 15 min</span></li>
+            <li><span class="time">13:25</span> Arrive early, use restrooms, and keep passports or ID ready if your ticket requires it.</li>
+            <li><span class="time" data-place="colosseum">13:40</span> <strong>Booked guided tour:</strong> Colosseum with underground visit.</li>
+            <li><span class="time">15:45</span> Short pause for drinks or gelato near the Colosseum.</li>
+            <li><span class="time">16:15</span> Walk along <strong>Via dei Fori Imperiali</strong> for the grand views back toward Piazza Venezia. <span class="tag">Walk about 18 min</span></li>
+            <li><span class="time">16:45</span> Optional stop at the <strong>Forum overlook</strong> or stay in Monti for a slower neighborhood walk.</li>
+            <li><span class="time">18:00</span> Dinner in Monti, a lovely area with a local feel and easy family-friendly options.</li>
+            <li><span class="time">20:00</span> Taxi back to the hotel. <span class="tag">Taxi about 15 to 20 min</span></li>
+          </ul>
+        </section>
+
+        <section class="card day agenda-day" data-color="4" data-route-id="sat">
+          <h2>Saturday 18 April 2026 | Piazza Navona, Pantheon, Trevi, Spanish Steps, Trastevere</h2>
+          <p class="muted">Goal: classic historic-center highlights in one flow, then a relaxed afternoon and dinner in Trastevere.</p>
+          <ul class="timeline">
+            <li><span class="time">10:30</span> Leave hotel and walk to <strong>Piazza Navona</strong>. <span class="tag">Walk about 18 to 20 min</span></li>
+            <li><span class="time" data-place="navona">10:50</span> Piazza Navona stroll and fountain photos.</li>
+            <li><span class="time">11:20</span> Walk to the <strong>Pantheon</strong>. <span class="tag">Walk about 8 min</span></li>
+            <li><span class="time" data-place="pantheon">11:30</span> Visit the Pantheon. A shorter stop works well here. Allow queue time if needed.</li>
+            <li><span class="time">12:05</span> Coffee break nearby.</li>
+            <li><span class="time">12:25</span> Walk to the <strong>Trevi Fountain</strong>. <span class="tag">Walk about 10 min</span></li>
+            <li><span class="time" data-place="trevi">12:35</span> Trevi Fountain stop and photos.</li>
+            <li><span class="time">12:55</span> Walk to the <strong>Spanish Steps</strong>. <span class="tag">Walk about 10 to 12 min</span></li>
+            <li><span class="time" data-place="spanish">13:10</span> Spanish Steps and the upper terrace viewpoint.</li>
+            <li><span class="time">13:45</span> Lunch around Via della Croce / Campo Marzio.</li>
+            <li><span class="time">15:00</span> Taxi to the <strong>Janiculum Terrace</strong> for a panoramic Rome view. <span class="tag">Taxi about 15 min</span></li>
+            <li><span class="time" data-place="janiculum">15:20</span> Janiculum viewpoint and relaxing break.</li>
+            <li><span class="time">16:00</span> Walk down into <strong>Trastevere</strong>. <span class="tag">Walk about 15 min downhill</span></li>
+            <li><span class="time" data-place="trastevere">16:20</span> Explore the lanes around <strong>Santa Maria in Trastevere</strong>, ideal for a teenager-friendly slower hour with snacks, shops, and street life.</li>
+            <li><span class="time">18:00</span> Gelato or aperitivo in Trastevere.</li>
+            <li><span class="time">19:15</span> Dinner in Trastevere.</li>
+            <li><span class="time">21:00</span> Taxi back to the hotel. <span class="tag">Taxi about 15 min</span></li>
+          </ul>
+        </section>
+
+        <section class="card agenda-day" data-route-id="sun">
+          <h2>Sunday 19 April 2026 | Check-out Day, Castle Visit, Easy Final Hours</h2>
+          <p class="muted">Goal: stay close to the hotel, keep luggage simple, and leave enough margin before the evening flight.</p>
+          <ul class="timeline">
+            <li><span class="time">09:30</span> Check out or settle luggage storage with the hotel before leaving.</li>
+            <li><span class="time">10:30</span> Walk to <strong>Castel Sant'Angelo</strong>. <span class="tag">Walk about 10 min</span></li>
+            <li><span class="time" data-place="castel">10:45</span> Visit Castel Sant'Angelo if you would like one last major monument from the inside. Otherwise, keep it as an exterior and bridge photo stop.</li>
+            <li><span class="time" data-place="campo">12:15</span> Walk to <strong>Campo de' Fiori</strong> or the nearby lanes for lunch. <span class="tag">Walk about 15 min</span></li>
+            <li><span class="time">13:30</span> Gentle stroll back via <strong>Piazza Navona</strong> and the river, or simply relax in Prati for shopping and coffee. <span class="tag">Walk 20 to 25 min total if using Piazza Navona route</span></li>
+            <li><span class="time">16:00</span> Final coffee break close to the hotel and collect luggage.</li>
+            <li><span class="time">18:15</span> Leave hotel for the airport. For a <strong>21:25 flight</strong>, this is a comfortable taxi departure time for <strong>Fiumicino</strong>. If your airport is <strong>Ciampino</strong>, I would leave a little earlier if traffic looks heavy.</li>
+            <li><span class="time">21:25</span> Departure flight.</li>
+          </ul>
+        </section>
+
+        <section class="card notes">
+          <h2>Practical Notes</h2>
+          <p><strong>Hotel:</strong> Aparthotel Trianon Borgo Pio, Piazza delle Vaschette, 13, 00193 Rome, Italy</p>
+          <p><strong>Phone:</strong> <a href="tel:+390668600849">+39 06 68600849</a></p>
+          <p><strong>Official planning links for this day:</strong> <span id="day-links"></span></p>
+        </section>
+      </main>
+    </div>
+  </div>
+  <div class="hover-card" id="agenda-hover-card" aria-hidden="true"></div>
+
+  <script
+    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+    crossorigin=""
+  ></script>
+  <script>
+    const places = {
+      hotel: {
+        name: "Hotel Piazza delle Vaschette 13",
+        lat: 41.9045,
+        lon: 12.4636,
+        wikiTitle: "Prati,_Rome",
+        photoUrl: "https://www.trianonborgopio.com/data/1366/Trianon-Borgo-Pio-2167-2024.jpg",
+        kind: "Base",
+        visit: "Your hotel in Prati, used as the start and end point each day.",
+        bestFor: "Easy return point near the Vatican side."
+      },
+      stpeter: {
+        name: "St Peter's Square",
+        lat: 41.9022,
+        lon: 12.4572,
+        wikiTitle: "Saint_Peter's_Square",
+        kind: "Monument",
+        visit: "The grand square in front of St Peter's Basilica, one of Rome's most iconic spaces.",
+        bestFor: "Photos, atmosphere, and evening views."
+      },
+      vatican: {
+        name: "Vatican Museums",
+        lat: 41.9064,
+        lon: 12.4537,
+        wikiTitle: "Vatican_Museums",
+        photoUrl: "https://commons.wikimedia.org/wiki/Special:FilePath/Entrance%20Vatican%20Museum.jpg?width=640",
+        kind: "Museum",
+        visit: "Home of the Vatican collections and the Sistine Chapel.",
+        bestFor: "Your booked guided tour on Thursday."
+      },
+      castel: {
+        name: "Castel Sant'Angelo",
+        lat: 41.9031,
+        lon: 12.4663,
+        wikiTitle: "Castel_Sant'Angelo",
+        kind: "Castle",
+        visit: "Historic fortress and museum with river views.",
+        bestFor: "Exterior views on Thursday and optional inside visit on Sunday."
+      },
+      navona: {
+        name: "Piazza Navona",
+        lat: 41.8992,
+        lon: 12.4731,
+        wikiTitle: "Piazza_Navona",
+        kind: "Square",
+        visit: "Elegant Baroque square with fountains and lively street atmosphere.",
+        bestFor: "Morning stroll and photos."
+      },
+      pantheon: {
+        name: "Pantheon",
+        lat: 41.8986,
+        lon: 12.4769,
+        wikiTitle: "Pantheon,_Rome",
+        kind: "Ancient monument",
+        visit: "One of the best preserved buildings of ancient Rome.",
+        bestFor: "Short but very memorable visit in the historic center."
+      },
+      trevi: {
+        name: "Trevi Fountain",
+        lat: 41.9009,
+        lon: 12.4833,
+        wikiTitle: "Trevi_Fountain",
+        kind: "Fountain",
+        visit: "Rome's most famous fountain and a classic family photo stop.",
+        bestFor: "Quick visit between Pantheon and Spanish Steps."
+      },
+      spanish: {
+        name: "Spanish Steps",
+        lat: 41.9059,
+        lon: 12.4823,
+        wikiTitle: "Spanish_Steps",
+        kind: "Square",
+        visit: "A classic Rome stop linking lively shopping streets and hilltop views.",
+        bestFor: "Walking break and panoramic viewpoint."
+      },
+      janiculum: {
+        name: "Janiculum Terrace",
+        lat: 41.8895,
+        lon: 12.4584,
+        wikiTitle: "Janiculum",
+        kind: "Viewpoint",
+        visit: "A broad panorama over central Rome from above the river.",
+        bestFor: "One of the best city views of the trip."
+      },
+      trastevere: {
+        name: "Santa Maria in Trastevere",
+        lat: 41.8897,
+        lon: 12.4694,
+        wikiTitle: "Santa_Maria_in_Trastevere",
+        kind: "Neighborhood",
+        visit: "Heart of Trastevere, ideal for wandering, snacks, and dinner.",
+        bestFor: "Relaxed late afternoon and evening."
+      },
+      venezia: {
+        name: "Piazza Venezia",
+        lat: 41.8958,
+        lon: 12.4826,
+        wikiTitle: "Piazza_Venezia",
+        kind: "Square",
+        visit: "Major central crossroads beside the Vittoriano monument.",
+        bestFor: "Good entry point into Ancient Rome side sightseeing."
+      },
+      capitoline: {
+        name: "Capitoline Hill",
+        lat: 41.8932,
+        lon: 12.4828,
+        wikiTitle: "Capitoline_Hill",
+        kind: "Viewpoint",
+        visit: "Historic hill with one of the best outlooks over the Roman Forum.",
+        bestFor: "Short scenic stop before Monti and the Colosseum."
+      },
+      monti: {
+        name: "Monti",
+        lat: 41.8950,
+        lon: 12.4930,
+        wikiTitle: "Monti_(rione_of_Rome)",
+        kind: "Neighborhood",
+        visit: "Charming neighborhood with small streets, cafes, and good lunch options.",
+        bestFor: "Lunch and a slower family-friendly walk."
+      },
+      colosseum: {
+        name: "Colosseum",
+        lat: 41.8902,
+        lon: 12.4922,
+        wikiTitle: "Colosseum",
+        kind: "Ancient monument",
+        visit: "Rome's most iconic amphitheater and a must-see historic site.",
+        bestFor: "Your booked underground tour on Friday."
+      },
+      campo: {
+        name: "Campo de' Fiori",
+        lat: 41.8957,
+        lon: 12.4722,
+        wikiTitle: "Campo_de'_Fiori",
+        kind: "Square",
+        visit: "Lively square and good lunch area on your final day.",
+        bestFor: "Easy final meal before returning for luggage."
+      }
+    };
+
+    const routes = [
+      {
+        id: "wed",
+        color: "#8c2f39",
+        label: "Wed 15 Apr",
+        links: [
+          { label: "St Peter's Basilica and Square", url: "https://www.basilicasanpietro.va/en.html" }
+        ],
+        stops: ["hotel", "stpeter", "hotel"],
+        annotations: [
+          { key: "hotel", text: "19:00 leave hotel" },
+          { key: "stpeter", text: "19:15 square + photos" }
+        ]
+      },
+      {
+        id: "thu",
+        color: "#0077b6",
+        label: "Thu 16 Apr",
+        links: [
+          { label: "Vatican Museums", url: "https://www.museivaticani.va/content/museivaticani/it/organizza-visita/scegli-la-visita.html" },
+          { label: "St Peter's Basilica and Square", url: "https://www.basilicasanpietro.va/en.html" },
+          { label: "Castel Sant'Angelo", url: "https://direzionemuseiroma.cultura.gov.it/pantheon-e-castel-santangelo/" }
+        ],
+        stops: ["hotel", "vatican", "stpeter", "castel", "hotel"],
+        annotations: [
+          { key: "vatican", text: "11:00 tour" },
+          { key: "stpeter", text: "15:45 square" },
+          { key: "castel", text: "17:25 bridge views" }
+        ]
+      },
+      {
+        id: "fri",
+        color: "#c2410c",
+        label: "Fri 17 Apr",
+        links: [
+          { label: "Colosseum Archaeological Park", url: "https://colosseo.it/visita/orari-e-biglietti/" }
+        ],
+        stops: ["hotel", "venezia", "capitoline", "monti", "colosseum", "venezia"],
+        annotations: [
+          { key: "venezia", text: "10:55 taxi drop" },
+          { key: "colosseum", text: "13:40 tour" }
+        ]
+      },
+      {
+        id: "sat",
+        color: "#4338ca",
+        label: "Sat 18 Apr",
+        links: [
+          { label: "Pantheon", url: "https://direzionemuseiroma.cultura.gov.it/pantheon/" }
+        ],
+        stops: ["hotel", "navona", "pantheon", "trevi", "spanish", "janiculum", "trastevere", "hotel"],
+        annotations: [
+          { key: "navona", text: "10:50" },
+          { key: "pantheon", text: "11:30" },
+          { key: "trevi", text: "12:35" },
+          { key: "spanish", text: "13:10" },
+          { key: "janiculum", text: "15:20" },
+          { key: "trastevere", text: "16:20" }
+        ]
+      },
+      {
+        id: "sun",
+        color: "#ffb703",
+        label: "Sun 19 Apr",
+        links: [
+          { label: "Castel Sant'Angelo", url: "https://direzionemuseiroma.cultura.gov.it/pantheon-e-castel-santangelo/" }
+        ],
+        stops: ["hotel", "castel", "campo", "hotel"],
+        annotations: [
+          { key: "castel", text: "10:45" },
+          { key: "campo", text: "12:15 lunch" }
+        ]
+      }
+    ];
+
+    const map = L.map("rome-map", {
+      zoomControl: true,
+      scrollWheelZoom: false
+    });
+
+    L.tileLayer(
+      "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+      {
+        attribution: '&copy; Esri, Maxar, Earthstar Geographics, and the GIS User Community'
+      }
+    ).addTo(map);
+
+    const labelLayer = L.tileLayer(
+      "https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}",
+      {
+        attribution: '&copy; Esri'
+      }
+    ).addTo(map);
+
+    const bounds = [];
+    const basePlaceMarkers = [];
+    const routeLayers = new Map();
+    const filterEl = document.getElementById("day-filter");
+    const agendaDays = Array.from(document.querySelectorAll(".agenda-day"));
+    const dayLinksEl = document.getElementById("day-links");
+    const siteDayMap = new Map();
+    const hotelLatLng = [places.hotel.lat, places.hotel.lon];
+
+    routes.forEach(route => {
+      route.stops.forEach(stop => {
+        if (!siteDayMap.has(stop)) {
+          siteDayMap.set(stop, []);
+        }
+        if (!siteDayMap.get(stop).includes(route.label)) {
+          siteDayMap.get(stop).push(route.label);
+        }
+      });
+    });
+
+    const iconByColor = (color, label = "") =>
+      L.divIcon({
+        className: "",
+        html: `<div style="width:24px;height:24px;border-radius:50%;background:${color};border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,.35);color:white;font:700 12px/18px Georgia,serif;text-align:center;padding-top:0">${label}</div>`,
+        iconSize: [24, 24],
+        iconAnchor: [12, 12]
+      });
+
+    function attachHoverPopup(layer) {
+      layer.on("mouseover", () => layer.openPopup());
+      layer.on("mouseout", () => layer.closePopup());
+      return layer;
+    }
+
+    function popupContent(place, extra = "") {
+      const detailBlock = place.kind === "Base"
+        ? `${place.visit}${extra}`
+        : `${place.visit}<br><br><strong>Best for:</strong> ${place.bestFor}${extra}`;
+      return `<div style="min-width:240px;max-width:260px">
+        <div class="popup-photo" data-wiki-title="${place.wikiTitle || ""}" data-photo-url="${place.photoUrl || ""}" style="margin-bottom:8px;min-height:0"></div>
+        <strong>${place.name}</strong><br>
+        <span style="color:#52606d">${place.kind}</span><br><br>
+        ${detailBlock}
+      </div>`;
+    }
+
+    async function hydratePopup(event) {
+      const popup = event.popup;
+      const node = popup.getElement();
+      if (!node) return;
+      const target = node.querySelector(".popup-photo");
+      if (!target || target.dataset.loaded === "true") return;
+      const photoUrl = target.dataset.photoUrl;
+      const title = target.dataset.wikiTitle;
+      if (photoUrl) {
+        target.innerHTML = `<img src="${photoUrl}" alt="" style="width:100%;height:120px;object-fit:cover;border-radius:10px;display:block">`;
+        target.dataset.loaded = "true";
+        return;
+      }
+      if (!title) {
+        target.dataset.loaded = "true";
+        return;
+      }
+      try {
+        const response = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(title)}`);
+        if (!response.ok) throw new Error("Image lookup failed");
+        const data = await response.json();
+        if (data.thumbnail && data.thumbnail.source) {
+          target.innerHTML = `<img src="${data.thumbnail.source}" alt="${title}" style="width:100%;height:120px;object-fit:cover;border-radius:10px;display:block">`;
+        }
+      } catch (error) {
+        target.innerHTML = "";
+      } finally {
+        target.dataset.loaded = "true";
+      }
+    }
+
+    async function fetchPhotoHtml(place) {
+      if (place && place.photoUrl) {
+        return `<img src="${place.photoUrl}" alt="${place.name}">`;
+      }
+      if (!place || !place.wikiTitle) return "";
+      try {
+        const response = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(place.wikiTitle)}`);
+        if (!response.ok) throw new Error("Image lookup failed");
+        const data = await response.json();
+        if (data.thumbnail && data.thumbnail.source) {
+          return `<img src="${data.thumbnail.source}" alt="${place.name}">`;
+        }
+      } catch (error) {
+        return "";
+      }
+      return "";
+    }
+
+    routes.forEach(route => {
+      const routeGroup = L.layerGroup();
+      const latlngs = route.stops.map(key => {
+        const place = places[key];
+        const latlng = [place.lat, place.lon];
+        bounds.push(latlng);
+        return latlng;
+      });
+
+      L.polyline(latlngs, {
+        color: route.color,
+        weight: 5,
+        opacity: 0.92
+      }).addTo(routeGroup);
+
+      route.annotations.forEach((note, index) => {
+        const place = places[note.key];
+        attachHoverPopup(L.marker([place.lat, place.lon], { icon: iconByColor(route.color, String(index + 1)) }))
+          .addTo(routeGroup)
+          .bindPopup(
+            popupContent(place, `<br><strong>Stop order:</strong> ${index + 1}<br><strong>Planned stop:</strong> ${route.label}, ${note.text}`)
+          )
+          .on("popupopen", hydratePopup);
+      });
+
+      routeLayers.set(route.id, routeGroup);
+
+      const button = document.createElement("button");
+      button.type = "button";
+      button.dataset.route = route.id;
+      button.textContent = route.label;
+      if (route.id === "wed") {
+        button.classList.add("active");
+      }
+      filterEl.appendChild(button);
+    });
+
+    Object.values(places).forEach(place => {
+      const key = Object.keys(places).find(name => places[name] === place);
+      const marker = attachHoverPopup(L.circleMarker([place.lat, place.lon], {
+        radius: key === "hotel" ? 7 : 5,
+        color: key === "hotel" ? "#8c2f39" : "#102a43",
+        weight: key === "hotel" ? 3 : 2,
+        fillColor: key === "hotel" ? "#fef2f2" : "#fff7ed",
+        fillOpacity: 1
+      })).addTo(map);
+      const dayText = key && siteDayMap.has(key) ? siteDayMap.get(key).join(", ") : "Not assigned";
+      marker.bindPopup(
+        key === "hotel"
+          ? popupContent(place, `<br><br><strong>Address:</strong> Piazza delle Vaschette, 13, 00193 Rome<br><strong>Phone:</strong> +39 06 68600849`)
+          : popupContent(place, `<br><strong>Planned day:</strong> ${dayText}`)
+      );
+      marker.on("popupopen", hydratePopup);
+      basePlaceMarkers.push(marker);
+    });
+
+    map.fitBounds(bounds, { padding: [30, 30] });
+
+    function showRoute(routeId) {
+      routeLayers.forEach(layer => {
+        if (map.hasLayer(layer)) {
+          map.removeLayer(layer);
+        }
+      });
+
+      if (routeLayers.has(routeId)) {
+        routeLayers.get(routeId).addTo(map);
+      }
+
+      document.querySelectorAll("#day-filter button").forEach(button => {
+        button.classList.toggle("active", button.dataset.route === routeId);
+      });
+
+      agendaDays.forEach(section => {
+        section.classList.toggle("hidden", section.dataset.routeId !== routeId);
+      });
+
+      const activeRoute = routes.find(route => route.id === routeId);
+      if (activeRoute && dayLinksEl) {
+        dayLinksEl.innerHTML = activeRoute.links
+          .map(link => `<a href="${link.url}">${link.label}</a>`)
+          .join(", ");
+      }
+
+      map.setView(hotelLatLng, 14, { animate: true });
+    }
+
+    filterEl.addEventListener("click", event => {
+      const button = event.target.closest("button[data-route]");
+      if (!button) return;
+      showRoute(button.dataset.route);
+    });
+
+    showRoute("wed");
+
+    const hoverCard = document.getElementById("agenda-hover-card");
+    const timeEls = Array.from(document.querySelectorAll(".time[data-place]"));
+
+    function placeCardContent(place, photoHtml) {
+      return `${photoHtml}
+        <strong>${place.name}</strong><br>
+        <div class="kind">${place.kind}</div>
+        <p style="margin:8px 0 6px">${place.visit}</p>
+        <p style="margin:0"><strong>Best for:</strong> ${place.bestFor}</p>`;
+    }
+
+    function moveHoverCard(event) {
+      const pad = 16;
+      let left = event.clientX + 18;
+      let top = event.clientY + 18;
+      if (left + 280 > window.innerWidth) left = event.clientX - 280;
+      if (top + 200 > window.innerHeight) top = event.clientY - 200;
+      hoverCard.style.left = `${Math.max(pad, left)}px`;
+      hoverCard.style.top = `${Math.max(pad, top)}px`;
+    }
+
+    timeEls.forEach(el => {
+      el.addEventListener("mouseenter", async event => {
+        const place = places[el.dataset.place];
+        if (!place) return;
+        hoverCard.innerHTML = placeCardContent(place, "");
+        hoverCard.style.display = "block";
+        moveHoverCard(event);
+        const photoHtml = await fetchPhotoHtml(place);
+        if (hoverCard.style.display === "block") {
+          hoverCard.innerHTML = placeCardContent(place, photoHtml);
+        }
+      });
+
+      el.addEventListener("mousemove", moveHoverCard);
+
+      el.addEventListener("mouseleave", () => {
+        hoverCard.style.display = "none";
+      });
+    });
+  </script>
+</body>
+</html>
