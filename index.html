@@ -295,6 +295,66 @@
         position: static;
       }
     }
+
+    @media (max-width: 640px) {
+      body {
+        line-height: 1.5;
+      }
+
+      .page {
+        padding: 12px;
+      }
+
+      .card {
+        padding: 16px;
+        border-radius: 14px;
+      }
+
+      h2 {
+        font-size: 1.12rem;
+      }
+
+      #rome-map {
+        height: 58vh;
+        min-height: 380px;
+        border-radius: 12px;
+      }
+
+      .day-filter {
+        gap: 6px;
+      }
+
+      .day-filter button {
+        width: calc(50% - 3px);
+        padding: 10px 12px;
+        font-size: 0.92rem;
+      }
+
+      .timeline {
+        margin-top: 12px;
+      }
+
+      .timeline li {
+        margin-left: 12px;
+        padding-left: 12px;
+      }
+
+      .time {
+        display: block;
+        min-width: 0;
+        margin-bottom: 4px;
+      }
+
+      .tag {
+        display: inline-block;
+        margin-top: 6px;
+        margin-left: 0;
+      }
+
+      .hover-card {
+        display: none !important;
+      }
+    }
   </style>
 </head>
 <body>
@@ -332,7 +392,7 @@
             <li><span class="time" data-place="vatican">11:00</span> <strong>Booked guided tour:</strong> <a href="https://www.google.com/maps/search/?api=1&query=Vatican+Museums+Rome" target="_blank" rel="noreferrer">Vatican Museums + Sistine Chapel</a>.</li>
             <li><span class="time">14:10</span> Lunch close to the museum at <a href="https://www.google.com/maps/search/?api=1&query=Ristorante+Dei+Musei+Via+Santamaura+5+Rome" target="_blank" rel="noreferrer">Ristorante dei Musei</a>. <span class="tag">Walk about 5 min</span></li>
             <li><span class="time">15:15</span> Walk back to the hotel. <span class="tag">Walk about 20 min</span></li>
-            <li><span class="time">15:35-17:35</span> Hotel rest break for 2 hours.</li>
+            <li><span class="time">15:35</span> Hotel rest break for 2 hours.</li>
             <li><span class="time">17:40</span> Leave hotel for <a href="https://www.google.com/maps/search/?api=1&query=Castel+Sant%27Angelo+Rome" target="_blank" rel="noreferrer">Castel Sant'Angelo</a>. <span class="tag">Walk about 12 min</span></li>
             <li><span class="time" data-place="castel">18:00</span> Castle and bridge area for the afternoon and evening atmosphere, including <a href="https://www.google.com/maps/search/?api=1&query=Ponte+Sant%27Angelo+Rome" target="_blank" rel="noreferrer">Ponte Sant'Angelo</a>.</li>
             <li><span class="time">19:45</span> Dinner at <a href="https://www.google.com/maps/search/?api=1&query=Su+%26+Giu+Cucina+Romana+Via+Tacito+42+Rome" target="_blank" rel="noreferrer">Su &amp; Giu Cucina Romana</a> in Prati.</li>
@@ -374,7 +434,7 @@
             <li><span class="time">12:55</span> Walk to the <a href="https://www.google.com/maps/search/?api=1&query=Spanish+Steps+Rome" target="_blank" rel="noreferrer">Spanish Steps</a>. <span class="tag">Walk about 10 to 12 min</span></li>
             <li><span class="time" data-place="spanish">13:10</span> <a href="https://www.google.com/maps/search/?api=1&query=Spanish+Steps+Rome" target="_blank" rel="noreferrer">Spanish Steps</a> and the upper terrace viewpoint.</li>
             <li><span class="time">13:45</span> Lunch near the Pantheon at <a href="https://www.google.com/maps/search/?api=1&query=Osteria+Da+Fortunata+Pantheon+Piazza+della+Rotonda+6+Rome" target="_blank" rel="noreferrer">Osteria Da Fortunata Pantheon</a>.</li>
-            <li><span class="time">15:15-17:15</span> Return to the hotel for an afternoon break. <span class="tag">Taxi about 15 min</span></li>
+            <li><span class="time">15:15</span> Return to the hotel for an afternoon break. <span class="tag">Taxi about 15 min</span></li>
             <li><span class="time">17:30</span> Taxi to <a href="https://www.google.com/maps/search/?api=1&query=Trastevere+Rome" target="_blank" rel="noreferrer">Trastevere</a>. <span class="tag">Taxi about 15 min</span></li>
             <li><span class="time" data-place="trastevere">17:50</span> Explore the lanes around <a href="https://www.google.com/maps/search/?api=1&query=Santa+Maria+in+Trastevere+Rome" target="_blank" rel="noreferrer">Santa Maria in Trastevere</a>, ideal for a teenager-friendly slower hour with snacks, shops, and street life.</li>
             <li><span class="time">18:30</span> Gelato or aperitivo in Trastevere.</li>
