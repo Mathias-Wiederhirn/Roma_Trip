@@ -1,6 +1,6 @@
 # Tania, Eleni & Mat's Rome Trip
 
-![Rome trip preview](https://upload.wikimedia.org/wikipedia/commons/thumb/a/a1/Italy-rome-st-peters-square.jpg/1200px-Italy-rome-st-peters-square.jpg)
+![Rome trip preview](./assets/rome-trip-banner.svg)
 
 A small travel website for our Rome stay, with an interactive map, day-by-day agenda, hotel details, gluten-free restaurant ideas, and family-friendly notes.
 
