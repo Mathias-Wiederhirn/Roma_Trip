@@ -1,6 +1,6 @@
 # Tania, Eleni & Mat's Rome Trip
 
-![Rome trip preview](./assets/rome-trip-banner.svg)
+![Rome trip preview](https://upload.wikimedia.org/wikipedia/commons/thumb/0/0b/Rome_skyline_panorama.jpg/1280px-Rome_skyline_panorama.jpg)
 
 A small travel website for our Rome stay, with an interactive map, day-by-day agenda, hotel details, gluten-free restaurant ideas, and family-friendly notes.
 
