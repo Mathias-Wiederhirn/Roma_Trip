@@ -252,7 +252,7 @@
 
     .weather-hours {
       display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
+      grid-template-columns: repeat(6, minmax(0, 1fr));
       gap: 8px;
       margin-top: 12px;
     }
@@ -417,7 +417,7 @@
       }
 
       .weather-hours {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
+        grid-template-columns: repeat(3, minmax(0, 1fr));
       }
     }
   </style>
@@ -893,7 +893,7 @@
         if (data.hourly && data.hourly.time) {
           data.hourly.time.forEach((dateTime, index) => {
             const [date, time] = dateTime.split("T");
-            if (!["09:00", "12:00", "15:00", "18:00"].includes(time)) return;
+            if (!["00:00", "09:00", "12:00", "15:00", "18:00", "21:00"].includes(time)) return;
             if (!hourlyWeatherByDate.has(date)) {
               hourlyWeatherByDate.set(date, []);
             }
