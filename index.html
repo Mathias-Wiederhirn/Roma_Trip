@@ -217,6 +217,45 @@
       display: none;
     }
 
+    .info-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+      margin-top: 14px;
+    }
+
+    .mini-card {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: #fffaf2;
+      padding: 14px;
+    }
+
+    .mini-card h3 {
+      margin-bottom: 8px;
+    }
+
+    .weather-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .weather-icon {
+      font-size: 2rem;
+      line-height: 1;
+    }
+
+    .weather-main {
+      font-size: 1rem;
+      font-weight: 700;
+    }
+
+    .weather-sub {
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+
     .legend {
       display: grid;
       gap: 10px;
@@ -366,6 +405,10 @@
       .hover-card {
         display: none !important;
       }
+
+      .info-grid {
+        grid-template-columns: 1fr;
+      }
     }
   </style>
 </head>
@@ -378,6 +421,25 @@
       <div class="day-filter" id="day-filter">
       </div>
       <div id="rome-map" aria-label="Rome itinerary map"></div>
+      <div class="info-grid">
+        <section class="mini-card">
+          <h3>Weather</h3>
+          <div id="weather-box" class="weather-row">
+            <div class="weather-icon">⛅</div>
+            <div>
+              <div class="weather-main">Loading forecast...</div>
+              <div class="weather-sub">Updates when you select a day</div>
+            </div>
+          </div>
+        </section>
+        <section class="mini-card">
+          <h3>Flight Info</h3>
+          <p><strong>Arrival:</strong> Wed 15 Apr 2026, 16:40 into Rome</p>
+          <p><strong>Departure:</strong> Sun 19 Apr 2026, 21:25 from Rome</p>
+          <p><strong>Hotel transfer:</strong> taxi is the easiest option with luggage; current plan leaves comfortable time on both ends.</p>
+          <p><strong>You could also add:</strong> airline, flight number, terminal, baggage details, check-in window, and live status links.</p>
+        </section>
+      </div>
     </section>
 
     <div class="layout">
@@ -774,8 +836,18 @@
     const filterEl = document.getElementById("day-filter");
     const agendaDays = Array.from(document.querySelectorAll(".agenda-day"));
     const dayLinksEl = document.getElementById("day-links");
+    const weatherBox = document.getElementById("weather-box");
     const siteDayMap = new Map();
     const hotelLatLng = [places.hotel.lat, places.hotel.lon];
+    const weatherByRoute = new Map();
+
+    const routeDateMap = {
+      wed: "2026-04-15",
+      thu: "2026-04-16",
+      fri: "2026-04-17",
+      sat: "2026-04-18",
+      sun: "2026-04-19"
+    };
 
     routes.forEach(route => {
       route.stops.forEach(stop => {
@@ -787,6 +859,62 @@
         }
       });
     });
+
+    function weatherIcon(code) {
+      if ([0].includes(code)) return "☀️";
+      if ([1, 2].includes(code)) return "🌤️";
+      if ([3].includes(code)) return "☁️";
+      if ([45, 48].includes(code)) return "🌫️";
+      if ([51, 53, 55, 56, 57].includes(code)) return "🌦️";
+      if ([61, 63, 65, 66, 67, 80, 81, 82].includes(code)) return "🌧️";
+      if ([71, 73, 75, 77, 85, 86].includes(code)) return "🌨️";
+      if ([95, 96, 99].includes(code)) return "⛈️";
+      return "⛅";
+    }
+
+    async function loadWeather() {
+      try {
+        const response = await fetch("https://api.open-meteo.com/v1/forecast?latitude=41.9039&longitude=12.4622&daily=weathercode,temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=Europe%2FZurich");
+        if (!response.ok) throw new Error("Weather unavailable");
+        const data = await response.json();
+        if (!data.daily || !data.daily.time) return;
+        data.daily.time.forEach((date, index) => {
+          weatherByRoute.set(date, {
+            code: data.daily.weathercode[index],
+            tempMax: data.daily.temperature_2m_max[index],
+            tempMin: data.daily.temperature_2m_min[index],
+            rainChance: data.daily.precipitation_probability_max[index]
+          });
+        });
+      } catch (error) {
+        weatherBox.innerHTML = `
+          <div class="weather-icon">⛅</div>
+          <div>
+            <div class="weather-main">Forecast unavailable</div>
+            <div class="weather-sub">Open online again to refresh the weather</div>
+          </div>`;
+      }
+    }
+
+    function renderWeather(routeId) {
+      const date = routeDateMap[routeId];
+      const entry = date ? weatherByRoute.get(date) : null;
+      if (!entry) {
+        weatherBox.innerHTML = `
+          <div class="weather-icon">⛅</div>
+          <div>
+            <div class="weather-main">Forecast loading...</div>
+            <div class="weather-sub">Weather refreshes with the selected day</div>
+          </div>`;
+        return;
+      }
+      weatherBox.innerHTML = `
+        <div class="weather-icon">${weatherIcon(entry.code)}</div>
+        <div>
+          <div class="weather-main">${Math.round(entry.tempMax)}° / ${Math.round(entry.tempMin)}°</div>
+          <div class="weather-sub">${date} · rain chance ${entry.rainChance ?? 0}%</div>
+        </div>`;
+    }
 
     const iconByColor = (color, label = "") =>
       L.divIcon({
@@ -948,6 +1076,7 @@
       }
 
       map.setView(hotelLatLng, 14, { animate: true });
+      renderWeather(routeId);
     }
 
     filterEl.addEventListener("click", event => {
@@ -956,6 +1085,7 @@
       showRoute(button.dataset.route);
     });
 
+    loadWeather().then(() => renderWeather("wed"));
     showRoute("wed");
 
     const hoverCard = document.getElementById("agenda-hover-card");
