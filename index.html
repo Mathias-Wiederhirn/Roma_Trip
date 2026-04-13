@@ -876,9 +876,16 @@
       return "⛅";
     }
 
+    function windLabel(speed) {
+      if (speed == null) return "calm";
+      if (speed < 10) return "light";
+      if (speed < 20) return "moderate";
+      return "windy";
+    }
+
     async function loadWeather() {
       try {
-        const response = await fetch("https://api.open-meteo.com/v1/forecast?latitude=41.9039&longitude=12.4622&daily=weathercode,temperature_2m_max,temperature_2m_min,precipitation_probability_max&hourly=weathercode,temperature_2m,precipitation_probability&timezone=Europe%2FZurich");
+        const response = await fetch("https://api.open-meteo.com/v1/forecast?latitude=41.9039&longitude=12.4622&daily=weathercode,temperature_2m_max,temperature_2m_min,precipitation_probability_max&hourly=weathercode,temperature_2m,precipitation_probability,windspeed_10m&timezone=Europe%2FZurich");
         if (!response.ok) throw new Error("Weather unavailable");
         const data = await response.json();
         if (!data.daily || !data.daily.time) return;
@@ -901,7 +908,8 @@
               time,
               code: data.hourly.weathercode[index],
               temp: data.hourly.temperature_2m[index],
-              rainChance: data.hourly.precipitation_probability[index]
+              rainChance: data.hourly.precipitation_probability[index],
+              wind: data.hourly.windspeed_10m[index]
             });
           });
         }
@@ -943,6 +951,7 @@
             <div style="font-size:1.2rem;line-height:1.3">${weatherIcon(hour.code)}</div>
             <div><strong>${Math.round(hour.temp)}°</strong></div>
             <div class="weather-sub">${hour.rainChance ?? 0}% rain</div>
+            <div class="weather-sub">${Math.round(hour.wind ?? 0)} km/h wind · ${windLabel(hour.wind)}</div>
           </div>`)
         .join("");
     }
